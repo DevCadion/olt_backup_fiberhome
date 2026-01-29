@@ -1,6 +1,6 @@
 # Backup OLT Fiberhome (Escalável)
 
-Este projeto automatiza o backup de múltiplas OLTs Fiberhome via Telnet e realiza o upload das configurações para um servidor FTP.
+Este projeto automatiza o backup de múltiplas OLTs Fiberhome via Telnet e realiza o upload das configurações para um servidor FTP, este serviço roda no debian 13 com python3.13.
 
 ## Estrutura do Projeto
 
