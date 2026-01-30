@@ -18,24 +18,35 @@ echo ""
 
 echo -e "${YELLOW}Iniciando instalação do Backup OLT Fiberhome...${NC}"
 
-# 1. Verificar dependências do sistema
-echo -e "${GREEN}[1/5] Verificando dependências do sistema...${NC}"
+# 1. Verificar e Instalar dependências do sistema (como root)
+echo -e "${GREEN}[1/5] Verificando e instalando dependências do sistema...${NC}"
+
+# Atualizar repositórios se necessário
+apt update -y &> /dev/null
+
+# Instalar Python3, venv e dependências essenciais
+apt install python3 python3-venv python3-full -y &> /dev/null
+
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}Python3 não encontrado. Por favor, instale o Python3.${NC}"
+    echo -e "${RED}Falha ao instalar o Python3. Verifique sua conexão ou repositórios.${NC}"
     exit 1
 fi
 
 # 2. Criar ambiente virtual
 echo -e "${GREEN}[2/5] Criando ambiente virtual (venv)...${NC}"
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
+# No Debian 12, é essencial remover o venv antigo se houver troca de versão de Python
+if [ -d "venv" ]; then
+    echo -e "${YELLOW}Removendo ambiente virtual antigo para evitar incompatibilidade...${NC}"
+    rm -rf venv
 fi
+python3 -m venv venv
 source venv/bin/activate
 
 # 3. Instalar dependências Python
 echo -e "${GREEN}[3/5] Instalando dependências Python...${NC}"
-pip install --upgrade pip &> /dev/null
-pip install -r requirements.txt &> /dev/null
+# No Python 3.13+, é mais seguro garantir que o pip e setuptools estejam atualizados
+./venv/bin/python3 -m pip install --upgrade pip setuptools wheel &> /dev/null
+./venv/bin/python3 -m pip install -r requirements.txt &> /dev/null
 
 # 4. Configurar arquivo .env
 echo -e "${GREEN}[4/5] Configurando arquivo .env...${NC}"
