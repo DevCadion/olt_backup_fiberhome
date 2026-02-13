@@ -5,6 +5,7 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
+from ftplib import FTP
 
 # =========================
 # LOAD ENV
@@ -64,6 +65,47 @@ def parse_pexpect_error(err: str) -> str:
     if "EOF" in err:
         return "Conexão encerrada inesperadamente"
     return "Falha inesperada durante a execução"
+# =========================
+# GARBAGE COLLECTOR FTP
+# =========================
+def cleanup_old_backups(olt_name, keep=2):
+    log(f"🧹 Iniciando limpeza de backups antigos para {olt_name}")
+
+    try:
+        ftp = FTP()
+        ftp.connect(FTP_IP, 21, timeout=20)
+        ftp.login(FTP_USER, FTP_PASS)
+
+        files = ftp.nlst()
+
+        olt_files = [f for f in files if f.startswith(f"backup{olt_name}-")]
+
+        if len(olt_files) <= keep:
+            log(f"✔️ Nada para limpar em {olt_name}")
+            ftp.quit()
+            return
+
+        def extract_date(filename):
+            try:
+                date_part = filename.split("-")[-3:]
+                date_str = "-".join(date_part)
+                return datetime.datetime.strptime(date_str, "%d-%m-%Y")
+            except:
+                return datetime.datetime.min
+
+        olt_files.sort(key=extract_date, reverse=True)
+
+        files_to_delete = olt_files[keep:]
+
+        for file in files_to_delete:
+            log(f"🗑 Removendo backup antigo: {file}")
+            ftp.delete(file)
+
+        ftp.quit()
+        log(f"✅ Limpeza concluída para {olt_name}")
+
+    except Exception as e:
+        log(f"⚠️ Erro ao limpar backups de {olt_name}: {e}")
 
 # =========================
 # EMAIL
@@ -213,12 +255,17 @@ def backup_olt(olt):
         child.close()
 
         log(f"✅ Backup realizado com sucesso: {olt['name']}")
+
+        # Executa Garbage Collector
+        cleanup_old_backups(olt['name'], keep=2)
+
         return True
 
     except Exception as e:
         log(f"❌ ERRO no backup {olt['name']}: {e}")
         send_alert(olt, "Conexão / Autenticação / Upload", str(e))
         return False
+
 
 # =========================
 # MAIN
