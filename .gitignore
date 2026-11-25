@@ -1,2 +1,12 @@
 *.log
 .env
+venv/
+venv.new/
+venv.old/
+.backup_olt.lock
+.ssh_known_hosts
+__pycache__/
+
+# Documentação e scripts internos da VM (não publicar)
+docs/ATUALIZACAO_VM.md
+scripts/preflight_vm.sh
